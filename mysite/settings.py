@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'blog',
+    'taggit',
 ]
 
 MIDDLEWARE = [
@@ -118,11 +119,11 @@ USE_L10N = True
 USE_TZ = True
 
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'your_account@gmail.com'
-EMAIL_HOST_PASSWORD = 'your_password'
-EMAIL_POST = 587
+EMAIL_HOST_USER = 'tasneem.rawashdeh92@gmail.com'
+EMAIL_HOST_PASSWORD = '29031992_T9922067098$'
+EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-
+# LISTEN CAN YOU CHECK THE CONFIGRATION THAT I MADE FOR POSTFIX IF THEY ARE RIGHT ? OK!
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
