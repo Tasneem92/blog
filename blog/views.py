@@ -5,7 +5,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from . models import Post, Comment
 from . forms import EmailPostForm, CommentForm
 from django.core.mail import send_mail
-
+from taggit.models import Tag
+from django.db.models import Count
 # Create your views here.
 
 def post_detail(request, year, month, day, post):
@@ -27,10 +28,36 @@ def post_detail(request, year, month, day, post):
             new_comment.save()
     else:
         comment_form = CommentForm()
-    return render(request, 'blog/post/detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form})
 
-def post_list(request, category=None):
+    # List similar posts:
+
+    # Retrieve a Python list of ID'S for the tags of the current post
+    # The values_list QuerySet returns tuples with the values for the given fields.
+    # We are passing it flat= True to get a flat list like [1, 2, 3...]
+    post_tags_ids = post.tags.values_list('id', flat=True)
+
+    # We get all posts that contain any of these tags excluding the current post itself
+    similar_posts = Post.published.filter(tags__in=post_tags_ids).exclude(id=post.id)
+
+    # We use the COunt aggregation function to generate a calculated field same_Tags
+    # that contains the number of tags shared with all the tags required
+    # We order the result by the number of shared tags (descendant)
+    # and by the publish to display recent posts first for the posts with the same
+    # number of shared tags. We slice the result to retrieve the first 4 posts
+    similar_posts = similar_posts.annotate(same_tags=Count('tags')).order_by('-same_tags', '-publish')[:4]
+
+    return render(request, 'blog/post/detail.html', {'post': post, 'comments': comments,
+                                                    'comment_form': comment_form,
+                                                    'similar_posts': similar_posts})
+
+def post_list(request, tag_slug=None):
     object_list = Post.published.all()
+
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        object_list = object_list.filter(tags__in=[tag])
+
     paginator = Paginator(object_list, 3) # 3 posts in each page
     page = request.GET.get('page')
     try:
@@ -41,7 +68,8 @@ def post_list(request, category=None):
     except EmptyPage:
         # If page is out of range deliver last page of results
         posts = paginator.page(paginator.num_pages)
-    return render(request, 'blog/post/list.html', {'page': page, 'posts': posts})
+
+    return render(request, 'blog/post/list.html', {'page': page, 'posts': posts, 'tag': tag})
 
 
 # The post_list view takes the request object as the only parameter,
